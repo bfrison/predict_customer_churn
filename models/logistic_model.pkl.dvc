@@ -1,0 +1,5 @@
+outs:
+- md5: 8e88110faf3f8d8fafef18102e84c9c1
+  size: 1023
+  hash: md5
+  path: logistic_model.pkl

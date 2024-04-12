@@ -16,10 +16,6 @@ eda_dir = './images/eda'
 def data_path():
     return './data/bank_data.csv'
 
-@pytest.fixture
-def churn_hist():
-    return os.path.join(eda_dir, 'churn_hist.png')
-
 def test_import(data_path):
     '''
     test data import - this example is completed for you to assist with the other test functions
@@ -38,14 +34,14 @@ def test_import(data_path):
         logging.error("Testing import_data: The file doesn't appear to have rows and columns")
         raise err
 
-
-def test_eda(data_path, churn_hist):
+@pytest.mark.parametrize('eda_path', ['churn_hist.png', 'customer_age_hist.png'])
+def test_eda(data_path, eda_path):
     '''
     test perform eda function
     '''
     df = cl.import_data(data_path)
     cl.perform_eda(df)
-    assert os.path.exists(churn_hist)
+    assert os.path.exists(os.path.join(eda_dir, eda_path))
 
 
 def test_encoder_helper(encoder_helper):

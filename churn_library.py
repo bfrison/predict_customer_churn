@@ -55,10 +55,15 @@ def perform_eda(df):
     output:
             None
     '''
+    eda_dir = './images/eda'
+    
     plt.figure(figsize=(20,10))
     df['Attrition_Flag'].apply(lambda val: 0 if val == "Existing Customer" else 1).hist()
-    eda_dir = './images/eda'
     plt.savefig(os.path.join(eda_dir, 'churn_hist.png'))
+    
+    plt.figure(figsize=(20,10)) 
+    df['Customer_Age'].hist()
+    plt.savefig(os.path.join(eda_dir, 'customer_age_hist.png'))
 
 
 def encoder_helper(df, category_lst, response):

@@ -34,7 +34,13 @@ def test_import(data_path):
         logging.error("Testing import_data: The file doesn't appear to have rows and columns")
         raise err
 
-@pytest.mark.parametrize('eda_path', ['churn_hist.png', 'customer_age_hist.png'])
+@pytest.mark.parametrize('eda_path', [
+    'churn_hist.png',
+    'customer_age_hist.png',
+    'marital_status_bar.png',
+    'total_trans_ct_density.png',
+    'corr_heatmap.png',
+])
 def test_eda(data_path, eda_path):
     '''
     test perform eda function

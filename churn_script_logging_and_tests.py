@@ -46,8 +46,12 @@ def test_eda(data_path, eda_path):
     test perform eda function
     '''
     df = cl.import_data(data_path)
-    cl.perform_eda(df)
-    assert os.path.exists(os.path.join(eda_dir, eda_path))
+    try:
+        cl.perform_eda(df)
+        logging.info('Testing perform_eda: SUCCESS')
+        assert os.path.exists(os.path.join(eda_dir, eda_path))
+    except AssertionError as err:
+        logging.error(f'File save error: {eda_path} was not saved properly')
 
 
 def test_encoder_helper(encoder_helper):

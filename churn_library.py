@@ -3,11 +3,13 @@
 
 # import libraries
 import os
+import matplotlib
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 
 os.environ['QT_QPA_PLATFORM'] = 'offscreen'
+matplotlib.use('Agg')
 
 cat_columns = [
     'Gender',
@@ -61,22 +63,26 @@ def perform_eda(df):
     plt.figure(figsize=(20,10))
     df['Attrition_Flag'].apply(lambda val: 0 if val == "Existing Customer" else 1).hist()
     plt.savefig(os.path.join(eda_dir, 'churn_hist.png'))
+    plt.close()
     
     plt.figure(figsize=(20,10)) 
     df['Customer_Age'].hist()
     plt.savefig(os.path.join(eda_dir, 'customer_age_hist.png'))
+    plt.close()
 
     plt.figure(figsize=(20,10)) 
     df.Marital_Status.value_counts('normalize').plot(kind='bar')
     plt.savefig(os.path.join(eda_dir, 'marital_status_bar.png'))
+    plt.close()
     
     plt.figure(figsize=(20,10))
-    # sns.histplot(df['Total_Trans_Ct'], stat='density', kde=True)
-    # plt.savefig(os.path.join(eda_dir, 'total_trans_ct_density.png'))
+    sns.histplot(df['Total_Trans_Ct'], stat='density', kde=True)
+    plt.savefig(os.path.join(eda_dir, 'total_trans_ct_density.png'))
     
     plt.figure(figsize=(20,10)) 
     sns.heatmap(df.corr(), annot=False, cmap='Dark2_r', linewidths = 2)
     plt.savefig(os.path.join(eda_dir, 'corr_heatmap.png'))
+    plt.close()
     
 
 def encoder_helper(df, category_lst, response):

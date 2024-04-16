@@ -1,4 +1,5 @@
 import churn_library as cl
+import joblib
 import logging
 import os
 import pytest
@@ -141,7 +142,28 @@ def test_train_models(train_models):
     '''
     test train_models
     '''
+    pass
 
+@pytest.fixture
+def rfc():
+    return joblib.load('models/rfc_model.pkl')
+
+@pytest.fixture
+def lrc():
+    return joblib.load('models/logistic_model.pkl')
+
+def test_feature_importance_plot(rfc, split_dfs, tmp_path):
+    model = rfc
+    X_train = split_dfs[0]
+    cl.feature_importance_plot(model, X_train, tmp_path)
+    model_name = str(model).replace('()', '')
+    logging.info(f'Testing feature_importance_plot for {model_name}: SUCCESS')
+    file_name =  f'{model_name}_feature_importances.png'
+    try:
+        assert os.path.exists(os.path.join(tmp_path, file_name))
+        logging.info(f'Testing feature_importance_plot for {model_name}: {file_name} successfully saved')
+    except AssertionError as err:
+        logging.error(f'Testing feature_importance_plot for {model_name}: {file_name} was not saved properly')
 
 if __name__ == "__main__":
     pass

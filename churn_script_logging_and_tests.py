@@ -15,12 +15,6 @@ logging.basicConfig(
 def data_path():
     return './data/bank_data.csv'
 
-@pytest.fixture
-def eda_dir():
-    if not os.path.exists('/tmp/churn_tests'):
-        os.mkdir('/tmp/churn_tests')
-    return '/tmp/churn_tests'
-
 def test_import(data_path):
     '''
     test data import - this example is completed for you to assist with the other test functions
@@ -51,20 +45,21 @@ eda_paths = [
     'corr_heatmap.png',
 ]
 
-def test_eda(df, eda_dir):
+def test_eda(df, tmp_path):
     '''
     test perform eda function
     '''
     try:
-        cl.perform_eda(df, eda_dir)
+        cl.perform_eda(df, str(tmp_path.absolute()))
         logging.info(f'Testing perform_eda: SUCCESS')
-    except:
+    except Error as err:
         logging.error(f'Testing perform_eda: ERROR')
+        raise err
 
 @pytest.mark.parametrize('eda_path', eda_paths)
-def test_eda_paths(eda_dir, eda_path):
+def test_eda_paths(tmp_path, eda_path):
     try:
-        assert os.path.exists(os.path.join(eda_dir, eda_path))
+        assert os.path.exists(os.path.join(tmp_path.absolute(), eda_path))
         logging.info(f'Testing perform_eda: successfully saved {eda_path}')
     except AssertionError as err:
         logging.error(f'Testing perform_eda: {eda_path} was not saved properly')
@@ -88,8 +83,9 @@ def test_encoder_helper(df, category_lst_fix):
     try:
         df_churn = cl.encoder_helper(df, category_lst_fix)
         logging.info('Testing encoder_helper: SUCCESS')
-    except:
+    except Error as err:
         logging.error(f'Testing encoder_helper: ERROR')
+        raise err
 
 @pytest.fixture
 def df_churn(df):
@@ -106,12 +102,40 @@ def test_encoder_helper_columns(df_churn, cat):
         logging.info(f'Testing encoder_helper: {column_name} found in dataframe')
     except AssertionError as err:
         logging.error(f'Testing encoder_helper error: {column_name} is missing')
+        raise err
 
-def test_perform_feature_engineering(perform_feature_engineering):
+def test_perform_feature_engineering(df_churn):
     '''
     test perform_feature_engineering
     '''
+    try:
+        X_train, X_test, y_train, y_test = cl.perform_feature_engineering(df_churn)
+        logging.info('Testing perform_feature_engineering: SUCCESS')
+    except Error as err:
+        logging.error('Testing perform_feature_engineering: ERROR')
 
+@pytest.fixture
+def split_dfs(df_churn):
+    return cl.perform_feature_engineering(df_churn)
+
+dfs_shapes = [
+    (0, 0, 7088, 'X_train number of rows'),
+    (0, 1, 19, 'X_train number of columns'),
+    (1, 0, 3039, 'X_test number of rows'),
+    (1, 1, 19, 'X_test number of columns'),
+    (2, 0, 7088, 'y_train number of rows'),
+    (3, 0, 3039, 'y_test number of rows'),
+]
+
+@pytest.mark.parametrize('df_index,shape_index,expected_val,assertion_message', dfs_shapes)
+def test_perform_feature_engineering_shapes(split_dfs, df_index, shape_index, expected_val, assertion_message):
+    val = split_dfs[df_index].shape[shape_index]
+    try:
+        assert val == expected_val
+        logging.info(f'Testing perform_feature_engineering: {assertion_message} is correct')
+    except AssertionError as err:
+        logging.error(f'Testing perform_feature_engineering error: {assertion_message} is incorrect, expected {expected_val:d} instead of {val:d}')
+        raise err
 
 def test_train_models(train_models):
     '''

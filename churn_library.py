@@ -8,6 +8,8 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 
+from sklearn.model_selection import train_test_split
+
 os.environ['QT_QPA_PLATFORM'] = 'offscreen'
 matplotlib.use('Agg')
 
@@ -110,7 +112,7 @@ def encoder_helper(df, category_lst, response=[]):
     return pd.concat([df, *new_cols], axis=1)
 
 
-def perform_feature_engineering(df, response):
+def perform_feature_engineering(df, response=[]):
     '''
     input:
               df: pandas dataframe
@@ -122,6 +124,22 @@ def perform_feature_engineering(df, response):
               y_train: y training data
               y_test: y testing data
     '''
+    keep_cols = [
+        'Customer_Age', 'Dependent_count', 'Months_on_book',
+        'Total_Relationship_Count', 'Months_Inactive_12_mon',
+        'Contacts_Count_12_mon', 'Credit_Limit',
+        'Total_Revolving_Bal', 'Avg_Open_To_Buy',
+        'Total_Amt_Chng_Q4_Q1', 'Total_Trans_Amt',
+        'Total_Trans_Ct', 'Total_Ct_Chng_Q4_Q1',
+        'Avg_Utilization_Ratio', 'Gender_Churn',
+        'Education_Level_Churn', 'Marital_Status_Churn',
+        'Income_Category_Churn', 'Card_Category_Churn'
+    ]
+    X = df[keep_cols]
+    y = df['Churn']
+    return train_test_split(
+        X, y, test_size= 0.3, random_state=42
+    )
 
 def classification_report_image(y_train,
                                 y_test,

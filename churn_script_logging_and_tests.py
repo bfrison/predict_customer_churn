@@ -10,11 +10,16 @@ logging.basicConfig(
     filemode='w',
     format='%(name)s - %(levelname)s - %(message)s')
 
-eda_dir = './images/eda'
 
 @pytest.fixture
 def data_path():
     return './data/bank_data.csv'
+
+@pytest.fixture
+def eda_dir():
+    if not os.path.exists('/tmp/churn_tests'):
+        os.mkdir('/tmp/churn_tests')
+    return '/tmp/churn_tests'
 
 def test_import(data_path):
     '''
@@ -34,31 +39,49 @@ def test_import(data_path):
         logging.error("Testing import_data: The file doesn't appear to have rows and columns")
         raise err
 
-@pytest.mark.parametrize('eda_path', [
+eda_paths = [
     'churn_hist.png',
     'customer_age_hist.png',
     'marital_status_bar.png',
     'total_trans_ct_density.png',
     'corr_heatmap.png',
-])
-def test_eda(data_path, eda_path):
+]
+
+@pytest.mark.parametrize('eda_path', eda_paths)
+def test_eda(data_path, eda_dir, eda_path):
     '''
     test perform eda function
     '''
     df = cl.import_data(data_path)
     try:
-        cl.perform_eda(df)
-        logging.info('Testing perform_eda: SUCCESS')
+        cl.perform_eda(df, eda_dir)
         assert os.path.exists(os.path.join(eda_dir, eda_path))
+        logging.info(f'Testing perform_eda: successfully saved {eda_path}')
     except AssertionError as err:
-        logging.error(f'File save error: {eda_path} was not saved properly')
+        logging.error(f'Testing perform_eda: {eda_path} was not saved properly')
 
-
-def test_encoder_helper(encoder_helper):
+@pytest.fixture
+def category_lst():
+    return [
+        'Gender',
+        'Education_Level',
+        'Marital_Status',
+        'Income_Category',
+        'Card_Category',
+    ]
+        
+def test_encoder_helper(data_path, category_lst):
     '''
     test encoder helper
     '''
-
+    df = cl.import_data(data_path)
+    df_churn = cl.encoder_helper(df, category_lst)
+    expected_columns = [f'{cat}_Churn' for cat in category_lst]
+    try:
+        assert set(df.columns).issuperset(expected_columns)
+        logging.info('Testing encoder_helper: SUCCESS')
+    except AssertionError:
+        logging.error(f'Testing encoder_helper error: {set(expected_columns) - set(df.columns)} are missing')
 
 def test_perform_feature_engineering(perform_feature_engineering):
     '''

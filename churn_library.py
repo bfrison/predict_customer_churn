@@ -36,6 +36,8 @@ quant_columns = [
     'Avg_Utilization_Ratio',
 ]
 
+eda_dir = './images/eda'
+
 
 def import_data(pth):
     '''
@@ -46,10 +48,12 @@ def import_data(pth):
     output:
             df: pandas dataframe
     '''
-    return pd.read_csv(pth)
+    df = pd.read_csv(pth)
+    df['Churn'] = df['Attrition_Flag'].apply(lambda val: 0 if val == "Existing Customer" else 1)
+    return df
 
 
-def perform_eda(df):
+def perform_eda(df, eda_dir):
     '''
     perform eda on df and save figures to images folder
     input:
@@ -58,10 +62,9 @@ def perform_eda(df):
     output:
             None
     '''
-    eda_dir = './images/eda'
     
     plt.figure(figsize=(20,10))
-    df['Attrition_Flag'].apply(lambda val: 0 if val == "Existing Customer" else 1).hist()
+    df['Churn'].hist()
     plt.savefig(os.path.join(eda_dir, 'churn_hist.png'))
     plt.close()
     
@@ -85,10 +88,10 @@ def perform_eda(df):
     plt.close()
     
 
-def encoder_helper(df, category_lst, response):
+def encoder_helper(df, category_lst, response=[]):
     '''
     helper function to turn each categorical column into a new column with
-    propotion of churn for each category - associated with cell 15 from the notebook
+    proportion of churn for each category - associated with cell 15 from the notebook
 
     input:
             df: pandas dataframe
@@ -98,7 +101,13 @@ def encoder_helper(df, category_lst, response):
     output:
             df: pandas dataframe with new columns for
     '''
-    pass
+    new_cols = []
+    for cat in category_lst:
+        groups = df.groupby(cat).mean()['Churn']
+        cat_series = df[cat].apply(lambda val:groups.loc[val]).rename(f'{cat}_Churn')
+        new_cols.append(cat_series)
+
+    return pd.concat([df, *new_cols], axis=1)
 
 
 def perform_feature_engineering(df, response):

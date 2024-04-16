@@ -39,6 +39,10 @@ def test_import(data_path):
         logging.error("Testing import_data: The file doesn't appear to have rows and columns")
         raise err
 
+@pytest.fixture
+def df(data_path):
+    return cl.import_data(data_path)
+
 eda_paths = [
     'churn_hist.png',
     'customer_age_hist.png',
@@ -47,41 +51,61 @@ eda_paths = [
     'corr_heatmap.png',
 ]
 
-@pytest.mark.parametrize('eda_path', eda_paths)
-def test_eda(data_path, eda_dir, eda_path):
+def test_eda(df, eda_dir):
     '''
     test perform eda function
     '''
-    df = cl.import_data(data_path)
     try:
         cl.perform_eda(df, eda_dir)
+        logging.info(f'Testing perform_eda: SUCCESS')
+    except:
+        logging.error(f'Testing perform_eda: ERROR')
+
+@pytest.mark.parametrize('eda_path', eda_paths)
+def test_eda_paths(eda_dir, eda_path):
+    try:
         assert os.path.exists(os.path.join(eda_dir, eda_path))
         logging.info(f'Testing perform_eda: successfully saved {eda_path}')
     except AssertionError as err:
         logging.error(f'Testing perform_eda: {eda_path} was not saved properly')
 
+category_lst = [
+    'Gender',
+    'Education_Level',
+    'Marital_Status',
+    'Income_Category',
+    'Card_Category',
+]
+
 @pytest.fixture
-def category_lst():
-    return [
-        'Gender',
-        'Education_Level',
-        'Marital_Status',
-        'Income_Category',
-        'Card_Category',
-    ]
+def category_lst_fix():
+    return category_lst
         
-def test_encoder_helper(data_path, category_lst):
+def test_encoder_helper(df, category_lst_fix):
     '''
     test encoder helper
     '''
-    df = cl.import_data(data_path)
-    df_churn = cl.encoder_helper(df, category_lst)
-    expected_columns = [f'{cat}_Churn' for cat in category_lst]
     try:
-        assert set(df.columns).issuperset(expected_columns)
+        df_churn = cl.encoder_helper(df, category_lst_fix)
         logging.info('Testing encoder_helper: SUCCESS')
-    except AssertionError:
-        logging.error(f'Testing encoder_helper error: {set(expected_columns) - set(df.columns)} are missing')
+    except:
+        logging.error(f'Testing encoder_helper: ERROR')
+
+@pytest.fixture
+def df_churn(df):
+    return cl.encoder_helper(df, category_lst)
+
+@pytest.mark.parametrize('cat', category_lst)
+def test_encoder_helper_columns(df_churn, cat):
+    '''
+    test encoder helper
+    '''
+    column_name = f'{cat}_Churn'
+    try:
+        assert column_name in df_churn.columns
+        logging.info(f'Testing encoder_helper: {column_name} found in dataframe')
+    except AssertionError as err:
+        logging.error(f'Testing encoder_helper error: {column_name} is missing')
 
 def test_perform_feature_engineering(perform_feature_engineering):
     '''

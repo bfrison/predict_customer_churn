@@ -46,24 +46,29 @@ eda_paths = [
     'corr_heatmap.png',
 ]
 
-def test_eda(df, tmp_path):
+@pytest.fixture(scope='module')
+def mod_tmp_path(tmp_path_factory):
+    return tmp_path_factory.mktemp('data')
+
+def test_eda(df, mod_tmp_path):
     '''
     test perform eda function
     '''
     try:
-        cl.perform_eda(df, str(tmp_path.absolute()))
+        cl.perform_eda(df, mod_tmp_path)
         logging.info(f'Testing perform_eda: SUCCESS')
     except Error as err:
         logging.error(f'Testing perform_eda: ERROR')
         raise err
 
 @pytest.mark.parametrize('eda_path', eda_paths)
-def test_eda_paths(tmp_path, eda_path):
+def test_eda_paths(mod_tmp_path, eda_path):
     try:
-        assert os.path.exists(os.path.join(tmp_path.absolute(), eda_path))
+        assert os.path.exists(os.path.join(mod_tmp_path, eda_path))
         logging.info(f'Testing perform_eda: successfully saved {eda_path}')
     except AssertionError as err:
         logging.error(f'Testing perform_eda: {eda_path} was not saved properly')
+        raise err
 
 category_lst = [
     'Gender',
@@ -114,6 +119,7 @@ def test_perform_feature_engineering(df_churn):
         logging.info('Testing perform_feature_engineering: SUCCESS')
     except Error as err:
         logging.error('Testing perform_feature_engineering: ERROR')
+        raise err
 
 @pytest.fixture
 def split_dfs(df_churn):
@@ -152,18 +158,35 @@ def rfc():
 def lrc():
     return joblib.load('models/logistic_model.pkl')
 
-def test_feature_importance_plot(rfc, split_dfs, tmp_path):
+def test_feature_importance_plot(rfc, split_dfs, mod_tmp_path):
     model = rfc
     X_train = split_dfs[0]
-    cl.feature_importance_plot(model, X_train, tmp_path)
-    model_name = str(model).replace('()', '')
-    logging.info(f'Testing feature_importance_plot for {model_name}: SUCCESS')
+    model_name = str(model).split('(')[0]
+    try:
+        cl.feature_importance_plot(model, X_train, mod_tmp_path)
+        logging.info(f'Testing feature_importance_plot for {model_name}: SUCCESS')
+    except Error as err:
+        raise err
+
+def test_feature_importance_plot_path(rfc, mod_tmp_path):
+    model=rfc
+    model_name = str(model).split('(')[0]
     file_name =  f'{model_name}_feature_importances.png'
     try:
-        assert os.path.exists(os.path.join(tmp_path, file_name))
+        assert os.path.exists(os.path.join(mod_tmp_path, file_name))
         logging.info(f'Testing feature_importance_plot for {model_name}: {file_name} successfully saved')
     except AssertionError as err:
         logging.error(f'Testing feature_importance_plot for {model_name}: {file_name} was not saved properly')
+        raise err
+        
+def test_classification_report_image(split_dfs, rfc, lrc, mod_tmp_path):
+    X_train, X_test, y_train, y_test = split_dfs
+    y_train_preds_rf = rfc.predict(X_train)
+    y_test_preds_rf = rfc.predict(X_test)
+    y_train_preds_lr = lrc.predict(X_train)
+    y_test_preds_lr = lrc.predict(X_test)
+    cl.classification_report_image(y_train,                                 y_test, y_train_preds_lr, y_train_preds_rf, y_test_preds_lr, y_test_preds_rf, mod_tmp_path)
+    assert os.path.exists(os.path.join(mod_tmp_path, 'random_forest_classification.png'))
 
 if __name__ == "__main__":
     pass

@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
+from sklearn.metrics import classification_report
 from sklearn.model_selection import train_test_split
 
 os.environ['QT_QPA_PLATFORM'] = 'offscreen'
@@ -147,7 +148,8 @@ def classification_report_image(y_train,
                                 y_train_preds_lr,
                                 y_train_preds_rf,
                                 y_test_preds_lr,
-                                y_test_preds_rf):
+                                y_test_preds_rf,
+                                output_pth):
     '''
     produces classification report for training and testing results and stores report as image
     in images folder
@@ -162,7 +164,13 @@ def classification_report_image(y_train,
     output:
              None
     '''
-    pass
+    plt.rc('figure', figsize=(5, 5))
+    plt.text(0.01, 1.25, str('Random Forest Train'), {'fontsize': 10}, fontproperties = 'monospace')
+    plt.text(0.01, 0.05, str(classification_report(y_test, y_test_preds_rf)), {'fontsize': 10}, fontproperties = 'monospace') # approach improved by OP -> monospace!
+    plt.text(0.01, 0.6, str('Random Forest Test'), {'fontsize': 10}, fontproperties = 'monospace')
+    plt.text(0.01, 0.7, str(classification_report(y_train, y_train_preds_rf)), {'fontsize': 10}, fontproperties = 'monospace') # approach improved by OP -> monospace!
+    plt.axis('off')
+    plt.savefig(os.path.join(output_pth, 'random_forest_classification.png'))
 
 
 def feature_importance_plot(model, X_data, output_pth):
@@ -176,6 +184,11 @@ def feature_importance_plot(model, X_data, output_pth):
     output:
              None
     '''
+#     explainer = shap.TreeExplainer(model)
+#     shap_values = explainer.shap_values(X_data)
+#     shap.summary_plot(shap_values, X_data, plot_type='bar')
+#     plt.savefig(os.path.join(output_pth, f'{model_name}_shap_explainer.png'))
+    
     importances = model.feature_importances_
     indices = np.argsort(importances)[::-1]
     names = [X_data.columns[i] for i in indices]
@@ -185,7 +198,7 @@ def feature_importance_plot(model, X_data, output_pth):
     plt.ylabel('Importance')
     plt.bar(range(X_data.shape[1]), importances[indices])
     plt.xticks(range(X_data.shape[1]), names, rotation=90)
-    model_name = str(model).replace('()', '')
+    model_name = str(model).split('(')[0]
     plt.savefig(os.path.join(output_pth, f'{model_name}_feature_importances.png'))
 
 def train_models(X_train, X_test, y_train, y_test):

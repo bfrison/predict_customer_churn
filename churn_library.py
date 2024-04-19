@@ -2,6 +2,7 @@
 
 
 # import libraries
+import joblib
 import os
 import matplotlib
 import matplotlib.pyplot as plt
@@ -9,8 +10,10 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
-from sklearn.metrics import classification_report
-from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import classification_report, plot_roc_curve
+from sklearn.model_selection import GridSearchCV, train_test_split
 
 os.environ['QT_QPA_PLATFORM'] = 'offscreen'
 matplotlib.use('Agg')
@@ -172,6 +175,32 @@ def classification_report_image(y_train,
     plt.axis('off')
     plt.savefig(os.path.join(output_pth, 'random_forest_classification.png'))
 
+    plt.rc('figure', figsize=(5, 5))
+    plt.text(0.01, 1.25, str('Logistic Regression Train'), {'fontsize': 10}, fontproperties = 'monospace')
+    plt.text(0.01, 0.05, str(classification_report(y_train, y_train_preds_lr)), {'fontsize': 10}, fontproperties = 'monospace') # approach improved by OP -> monospace!
+    plt.text(0.01, 0.6, str('Logistic Regression Test'), {'fontsize': 10}, fontproperties = 'monospace')
+    plt.text(0.01, 0.7, str(classification_report(y_test, y_test_preds_lr)), {'fontsize': 10}, fontproperties = 'monospace') # approach improved by OP -> monospace!
+    plt.axis('off')
+    plt.savefig(os.path.join(output_pth, 'logistic_regression_classification.png'))
+
+def performance_curves(lrc, rfc, X_test, y_test, output_pth):
+    '''
+    creates and stores roc curves for logisitc regression and random forest models
+    input:
+        lrc: logistic regresion model
+        rfc: random forest model
+        X_test: dataframe containaing test data
+        y_test: series containing results
+        output_pth: directory in which the figure will be saved
+    output:
+        None
+    '''
+    lrc_plot = plot_roc_curve(lrc, X_test, y_test)
+    plt.figure(figsize=(15, 8))
+    ax = plt.gca()
+    rfc_disp = plot_roc_curve(rfc, X_test, y_test, ax=ax, alpha=0.8)
+    lrc_plot.plot(ax=ax, alpha=0.8)
+    plt.savefig(os.path.join(output_pth, 'roc_curves.png'))
 
 def feature_importance_plot(model, X_data, output_pth):
     '''
@@ -212,4 +241,37 @@ def train_models(X_train, X_test, y_train, y_test):
     output:
               None
     '''
-    pass
+    rfc = RandomForestClassifier(random_state=42)
+    param_grid = {
+        'n_estimators': [200, 500],
+        'max_features': ['auto', 'sqrt'],
+        'max_depth' : [4,5,100],
+        'criterion' :['gini', 'entropy']
+    }
+
+    cv_rfc = GridSearchCV(estimator=rfc, param_grid=param_grid, cv=5)
+    cv_rfc.fit(X_train, y_train)
+
+    y_train_preds_rf = cv_rfc.best_estimator_.predict(X_train)
+    y_test_preds_rf = cv_rfc.best_estimator_.predict(X_test)
+
+    print('random forest results')
+    print('test results')
+    print(classification_report(y_test, y_test_preds_rf))
+    print('train results')
+    print(classification_report(y_train, y_train_preds_rf))
+    joblib.dump(cv_rfc.best_estimator_, os.path.join(output_pth, 'rfc_model.pkl'))
+
+    lrc = LogisticRegression(solver='lbfgs', max_iter=3000)
+    lrc.fit(X_train, y_train)
+
+    y_train_preds_lr = lrc.predict(X_train)
+    y_test_preds_lr = lrc.predict(X_test)
+
+    print('logistic regression results')
+    print('test results')
+    print(classification_report(y_test, y_test_preds_lr))
+    print('train results')
+    print(classification_report(y_train, y_train_preds_lr))
+
+    joblib.dump(lrc, os.path.join(mod_tmp_path, 'logistic_model.pkl'))

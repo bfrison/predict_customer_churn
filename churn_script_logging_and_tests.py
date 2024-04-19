@@ -144,19 +144,25 @@ def test_perform_feature_engineering_shapes(split_dfs, df_index, shape_index, ex
         logging.error(f'Testing perform_feature_engineering error: {assertion_message} is incorrect, expected {expected_val:d} instead of {val:d}')
         raise err
 
-def test_train_models(train_models):
+def test_train_models(split_dfs, mod_tmp_path):
     '''
     test train_models
     '''
-    pass
+    X_train, X_test, y_train, y_test = split_dfs
+    try:
+        cl.train_models(X_train, X_test, y_train, y_test, mod_tmp_path)
+        logging.info('Testing train_models: SUCCESS')
+    except Exception as err:
+        logging.error('Testing train_models: ERROR')
+        raise err
 
 @pytest.fixture
 def rfc():
-    return joblib.load('models/rfc_model.pkl')
+    return joblib.load(os.path.join(mod_tmp_path, 'rfc_model.pkl'))
 
 @pytest.fixture
 def lrc():
-    return joblib.load('models/logistic_model.pkl')
+    return joblib.load(os.path.join(mod_tmp_path, 'logistic_model.pkl'))
 
 def test_feature_importance_plot(rfc, split_dfs, mod_tmp_path):
     model = rfc
@@ -185,8 +191,38 @@ def test_classification_report_image(split_dfs, rfc, lrc, mod_tmp_path):
     y_test_preds_rf = rfc.predict(X_test)
     y_train_preds_lr = lrc.predict(X_train)
     y_test_preds_lr = lrc.predict(X_test)
-    cl.classification_report_image(y_train,                                 y_test, y_train_preds_lr, y_train_preds_rf, y_test_preds_lr, y_test_preds_rf, mod_tmp_path)
-    assert os.path.exists(os.path.join(mod_tmp_path, 'random_forest_classification.png'))
+    try:
+        cl.classification_report_image(y_train,                                 y_test, y_train_preds_lr, y_train_preds_rf, y_test_preds_lr, y_test_preds_rf, mod_tmp_path)
+        logging.info('Testing classification_report_image: SUCCESS')
+    except Error as err:
+        logging.error('Testing classification_report_image: ERROR')
+        raise err
+
+@pytest.mark.parametrize('file_name', ['random_forest_classification.png', 'logistic_regression_classification.png'])
+def test_classification_report_image_path(file_name, mod_tmp_path):
+    try:
+        assert os.path.exists(os.path.join(mod_tmp_path, file_name))
+        logging.info(f'Testing classification_image_report: {file_name} successfully saved')
+    except AssertionError as err:
+        logging.error(f'Testing classification_image_report error: {file_name} was not saved properly')
+        raise err
+
+def test_performance_curves(lrc, rfc, split_dfs, mod_tmp_path):
+    _, X_test, _, y_test = split_dfs
+    try:
+        cl.performance_curves(lrc, rfc, X_test, y_test, mod_tmp_path)
+        logging.info('Testing performance_curves: SUCCESS')
+    except Error as err:
+        logging.info('Testing performance_curves: ERROR')
+        raise err
+
+def test_performance_curves_path(mod_tmp_path):
+    try:
+        assert os.path.exists(os.path.join(mod_tmp_path, 'roc_curves.png'))
+        logging.info('Testing performance_curves: roc_curves.png successfully saved')
+    except AssertionError as err:
+        logging.error('Testing performance_curves: roc_curves.png was not saved properly')
+        raise err
 
 if __name__ == "__main__":
     pass

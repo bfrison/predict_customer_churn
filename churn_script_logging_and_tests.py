@@ -57,7 +57,7 @@ def test_eda(df, mod_tmp_path):
     try:
         cl.perform_eda(df, mod_tmp_path)
         logging.info(f'Testing perform_eda: SUCCESS')
-    except Error as err:
+    except Exception as err:
         logging.error(f'Testing perform_eda: ERROR')
         raise err
 
@@ -117,7 +117,7 @@ def test_perform_feature_engineering(df_churn):
     try:
         X_train, X_test, y_train, y_test = cl.perform_feature_engineering(df_churn)
         logging.info('Testing perform_feature_engineering: SUCCESS')
-    except Error as err:
+    except Exception as err:
         logging.error('Testing perform_feature_engineering: ERROR')
         raise err
 
@@ -157,11 +157,11 @@ def test_train_models(split_dfs, mod_tmp_path):
         raise err
 
 @pytest.fixture
-def rfc():
+def rfc(mod_tmp_path):
     return joblib.load(os.path.join(mod_tmp_path, 'rfc_model.pkl'))
 
 @pytest.fixture
-def lrc():
+def lrc(mod_tmp_path):
     return joblib.load(os.path.join(mod_tmp_path, 'logistic_model.pkl'))
 
 def test_feature_importance_plot(rfc, split_dfs, mod_tmp_path):
@@ -171,11 +171,11 @@ def test_feature_importance_plot(rfc, split_dfs, mod_tmp_path):
     try:
         cl.feature_importance_plot(model, X_train, mod_tmp_path)
         logging.info(f'Testing feature_importance_plot for {model_name}: SUCCESS')
-    except Error as err:
+    except Exception as err:
         raise err
 
 def test_feature_importance_plot_path(rfc, mod_tmp_path):
-    model=rfc
+    model = rfc
     model_name = str(model).split('(')[0]
     file_name =  f'{model_name}_feature_importances.png'
     try:
@@ -194,7 +194,7 @@ def test_classification_report_image(split_dfs, rfc, lrc, mod_tmp_path):
     try:
         cl.classification_report_image(y_train,                                 y_test, y_train_preds_lr, y_train_preds_rf, y_test_preds_lr, y_test_preds_rf, mod_tmp_path)
         logging.info('Testing classification_report_image: SUCCESS')
-    except Error as err:
+    except Exception as err:
         logging.error('Testing classification_report_image: ERROR')
         raise err
 
@@ -212,7 +212,7 @@ def test_performance_curves(lrc, rfc, split_dfs, mod_tmp_path):
     try:
         cl.performance_curves(lrc, rfc, X_test, y_test, mod_tmp_path)
         logging.info('Testing performance_curves: SUCCESS')
-    except Error as err:
+    except Exception as err:
         logging.info('Testing performance_curves: ERROR')
         raise err
 

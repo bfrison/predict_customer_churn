@@ -43,7 +43,10 @@ quant_columns = [
     'Avg_Utilization_Ratio',
 ]
 
+data_path = './data/bank_data.csv'
 eda_dir = './images/eda'
+models_dir = './models'
+results_dir = './images/results'
 
 
 def import_data(pth):
@@ -230,7 +233,7 @@ def feature_importance_plot(model, X_data, output_pth):
     model_name = str(model).split('(')[0]
     plt.savefig(os.path.join(output_pth, f'{model_name}_feature_importances.png'))
 
-def train_models(X_train, X_test, y_train, y_test):
+def train_models(X_train, X_test, y_train, y_test, output_pth):
     '''
     train, store model results: images + scores, and store models
     input:
@@ -274,4 +277,30 @@ def train_models(X_train, X_test, y_train, y_test):
     print('train results')
     print(classification_report(y_train, y_train_preds_lr))
 
-    joblib.dump(lrc, os.path.join(mod_tmp_path, 'logistic_model.pkl'))
+    joblib.dump(lrc, os.path.join(output_pth, 'logistic_model.pkl'))
+
+if __name__ == '__main__':
+    df = import_data(data_path)
+
+    perform_eda(df, eda_dir)
+    df_encoded = encoder_helper(df, cat_columns)
+    X_train, X_test, y_train, y_test = perform_feature_engineering(df_encoded)
+
+    train_models(X_train, X_test, y_train, y_test, models_dir)
+    rfc = joblib.load(os.path.join(models_dir, 'rfc_model.pkl'))
+    lrc = joblib.load(os.path.join(models_dir, 'logistic_model.pkl'))
+
+    y_train_preds_rf = rfc.predict(X_train)
+    y_test_preds_rf = rfc.predict(X_test)
+    y_train_preds_lr = lrc.predict(X_train)
+    y_test_preds_lr = lrc.predict(X_test)
+
+    performance_curves(lrc, rfc, X_test, y_test, results_dir)
+    classification_report_image(y_train,
+                                y_test,
+                                y_train_preds_lr,
+                                y_train_preds_rf,
+                                y_test_preds_lr,
+                                y_test_preds_rf,
+                                results_dir)
+    feature_importance_plot(rfc, X_train, results_dir)

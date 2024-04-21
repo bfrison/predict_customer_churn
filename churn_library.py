@@ -1,9 +1,14 @@
 # library doc string
-
+'''
+This module creates and trains Random Forest and Logistic Regression
+models and fits them on tha bank data. It then outputs graphics rating
+the performance of those models
+'''
 
 # import libraries
-import joblib
 import os
+
+import joblib
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
@@ -43,10 +48,10 @@ quant_columns = [
     'Avg_Utilization_Ratio',
 ]
 
-data_path = './data/bank_data.csv'
-eda_dir = './images/eda'
-models_dir = './models'
-results_dir = './images/results'
+DATA_PATH = './data/bank_data.csv'
+EDA_PTH = './images/eda'
+MODELS_DIR = './models'
+RESULTS_DIR = './images/results'
 
 
 def import_data(pth):
@@ -59,7 +64,8 @@ def import_data(pth):
             df: pandas dataframe
     '''
     df = pd.read_csv(pth)
-    df['Churn'] = df['Attrition_Flag'].apply(lambda val: 0 if val == "Existing Customer" else 1)
+    df['Churn'] = df['Attrition_Flag'].apply(
+        lambda val: 0 if val == "Existing Customer" else 1)
     return df
 
 
@@ -72,33 +78,33 @@ def perform_eda(df, eda_dir):
     output:
             None
     '''
-    
-    plt.figure(figsize=(20,10))
+
+    plt.figure(figsize=(20, 10))
     df['Churn'].hist()
     plt.savefig(os.path.join(eda_dir, 'churn_hist.png'))
     plt.close()
-    
-    plt.figure(figsize=(20,10)) 
+
+    plt.figure(figsize=(20, 10))
     df['Customer_Age'].hist()
     plt.savefig(os.path.join(eda_dir, 'customer_age_hist.png'))
     plt.close()
 
-    plt.figure(figsize=(20,10)) 
+    plt.figure(figsize=(20, 10))
     df.Marital_Status.value_counts('normalize').plot(kind='bar')
     plt.savefig(os.path.join(eda_dir, 'marital_status_bar.png'))
     plt.close()
-    
-    plt.figure(figsize=(20,10))
+
+    plt.figure(figsize=(20, 10))
     sns.histplot(df['Total_Trans_Ct'], stat='density', kde=True)
     plt.savefig(os.path.join(eda_dir, 'total_trans_ct_density.png'))
-    
-    plt.figure(figsize=(20,10)) 
-    sns.heatmap(df.corr(), annot=False, cmap='Dark2_r', linewidths = 2)
+
+    plt.figure(figsize=(20, 10))
+    sns.heatmap(df.corr(), annot=False, cmap='Dark2_r', linewidths=2)
     plt.savefig(os.path.join(eda_dir, 'corr_heatmap.png'))
     plt.close()
-    
 
-def encoder_helper(df, category_lst, response=[]):
+
+def encoder_helper(df, category_lst):
     '''
     helper function to turn each categorical column into a new column with
     proportion of churn for each category - associated with cell 15 from the notebook
@@ -106,7 +112,8 @@ def encoder_helper(df, category_lst, response=[]):
     input:
             df: pandas dataframe
             category_lst: list of columns that contain categorical features
-            response: string of response name [optional argument that could be used for naming variables or index y column]
+            response: string of response name [optional argument that
+            could be used for naming variables or index y column]
 
     output:
             df: pandas dataframe with new columns for
@@ -114,17 +121,20 @@ def encoder_helper(df, category_lst, response=[]):
     new_cols = []
     for cat in category_lst:
         groups = df.groupby(cat).mean()['Churn']
-        cat_series = df[cat].apply(lambda val:groups.loc[val]).rename(f'{cat}_Churn')
+        cat_series = df[cat].apply(
+            lambda val: groups.loc[val]).rename(f'{cat}_Churn')
         new_cols.append(cat_series)
 
     return pd.concat([df, *new_cols], axis=1)
 
 
-def perform_feature_engineering(df, response=[]):
+def perform_feature_engineering(df):
     '''
     input:
               df: pandas dataframe
-              response: string of response name [optional argument that could be used for naming variables or index y column]
+              response: string of response name [optional argument
+              that could be used for naming variables or index
+              y column]
 
     output:
               X_train: X training data
@@ -146,8 +156,9 @@ def perform_feature_engineering(df, response=[]):
     X = df[keep_cols]
     y = df['Churn']
     return train_test_split(
-        X, y, test_size= 0.3, random_state=42
+        X, y, test_size=0.3, random_state=42
     )
+
 
 def classification_report_image(y_train,
                                 y_test,
@@ -171,20 +182,32 @@ def classification_report_image(y_train,
              None
     '''
     plt.rc('figure', figsize=(5, 5))
-    plt.text(0.01, 1.25, str('Random Forest Train'), {'fontsize': 10}, fontproperties = 'monospace')
-    plt.text(0.01, 0.05, str(classification_report(y_test, y_test_preds_rf)), {'fontsize': 10}, fontproperties = 'monospace') # approach improved by OP -> monospace!
-    plt.text(0.01, 0.6, str('Random Forest Test'), {'fontsize': 10}, fontproperties = 'monospace')
-    plt.text(0.01, 0.7, str(classification_report(y_train, y_train_preds_rf)), {'fontsize': 10}, fontproperties = 'monospace') # approach improved by OP -> monospace!
+    plt.text(0.01, 1.25, str('Random Forest Train'), {
+             'fontsize': 10}, fontproperties='monospace')
+    plt.text(0.01, 0.05, str(classification_report(y_test, y_test_preds_rf)), {
+             'fontsize': 10}, fontproperties='monospace')  # approach improved by OP -> monospace!
+    plt.text(0.01, 0.6, str('Random Forest Test'), {
+             'fontsize': 10}, fontproperties='monospace')
+    plt.text(0.01, 0.7, str(classification_report(y_train, y_train_preds_rf)), {
+             'fontsize': 10}, fontproperties='monospace')  # approach improved by OP -> monospace!
     plt.axis('off')
     plt.savefig(os.path.join(output_pth, 'random_forest_classification.png'))
 
     plt.rc('figure', figsize=(5, 5))
-    plt.text(0.01, 1.25, str('Logistic Regression Train'), {'fontsize': 10}, fontproperties = 'monospace')
-    plt.text(0.01, 0.05, str(classification_report(y_train, y_train_preds_lr)), {'fontsize': 10}, fontproperties = 'monospace') # approach improved by OP -> monospace!
-    plt.text(0.01, 0.6, str('Logistic Regression Test'), {'fontsize': 10}, fontproperties = 'monospace')
-    plt.text(0.01, 0.7, str(classification_report(y_test, y_test_preds_lr)), {'fontsize': 10}, fontproperties = 'monospace') # approach improved by OP -> monospace!
+    plt.text(0.01, 1.25, str('Logistic Regression Train'),
+             {'fontsize': 10}, fontproperties='monospace')
+    plt.text(0.01, 0.05, str(classification_report(y_train, y_train_preds_lr)), {
+             'fontsize': 10}, fontproperties='monospace')  # approach improved by OP -> monospace!
+    plt.text(0.01, 0.6, str('Logistic Regression Test'), {
+             'fontsize': 10}, fontproperties='monospace')
+    plt.text(0.01, 0.7, str(classification_report(y_test, y_test_preds_lr)), {
+             'fontsize': 10}, fontproperties='monospace')  # approach improved by OP -> monospace!
     plt.axis('off')
-    plt.savefig(os.path.join(output_pth, 'logistic_regression_classification.png'))
+    plt.savefig(
+        os.path.join(
+            output_pth,
+            'logistic_regression_classification.png'))
+
 
 def performance_curves(lrc, rfc, X_test, y_test, output_pth):
     '''
@@ -200,10 +223,11 @@ def performance_curves(lrc, rfc, X_test, y_test, output_pth):
     '''
     lrc_plot = plot_roc_curve(lrc, X_test, y_test)
     plt.figure(figsize=(15, 8))
-    ax = plt.gca()
-    rfc_disp = plot_roc_curve(rfc, X_test, y_test, ax=ax, alpha=0.8)
-    lrc_plot.plot(ax=ax, alpha=0.8)
+    axis = plt.gca()
+    plot_roc_curve(rfc, X_test, y_test, ax=axis, alpha=0.8)
+    lrc_plot.plot(ax=axis, alpha=0.8)
     plt.savefig(os.path.join(output_pth, 'roc_curves.png'))
+
 
 def feature_importance_plot(model, X_data, output_pth):
     '''
@@ -216,22 +240,22 @@ def feature_importance_plot(model, X_data, output_pth):
     output:
              None
     '''
-#     explainer = shap.TreeExplainer(model)
-#     shap_values = explainer.shap_values(X_data)
-#     shap.summary_plot(shap_values, X_data, plot_type='bar')
-#     plt.savefig(os.path.join(output_pth, f'{model_name}_shap_explainer.png'))
-    
+
     importances = model.feature_importances_
     indices = np.argsort(importances)[::-1]
     names = [X_data.columns[i] for i in indices]
 
-    plt.figure(figsize=(20,5))
+    plt.figure(figsize=(20, 5))
     plt.title("Feature Importance")
     plt.ylabel('Importance')
     plt.bar(range(X_data.shape[1]), importances[indices])
     plt.xticks(range(X_data.shape[1]), names, rotation=90)
     model_name = str(model).split('(')[0]
-    plt.savefig(os.path.join(output_pth, f'{model_name}_feature_importances.png'))
+    plt.savefig(
+        os.path.join(
+            output_pth,
+            f'{model_name}_feature_importances.png'))
+
 
 def train_models(X_train, X_test, y_train, y_test, output_pth):
     '''
@@ -248,8 +272,8 @@ def train_models(X_train, X_test, y_train, y_test, output_pth):
     param_grid = {
         'n_estimators': [200, 500],
         'max_features': ['auto', 'sqrt'],
-        'max_depth' : [4,5,100],
-        'criterion' :['gini', 'entropy']
+        'max_depth': [4, 5, 100],
+        'criterion': ['gini', 'entropy']
     }
 
     cv_rfc = GridSearchCV(estimator=rfc, param_grid=param_grid, cv=5)
@@ -263,7 +287,11 @@ def train_models(X_train, X_test, y_train, y_test, output_pth):
     print(classification_report(y_test, y_test_preds_rf))
     print('train results')
     print(classification_report(y_train, y_train_preds_rf))
-    joblib.dump(cv_rfc.best_estimator_, os.path.join(output_pth, 'rfc_model.pkl'))
+    joblib.dump(
+        cv_rfc.best_estimator_,
+        os.path.join(
+            output_pth,
+            'rfc_model.pkl'))
 
     lrc = LogisticRegression(solver='lbfgs', max_iter=3000)
     lrc.fit(X_train, y_train)
@@ -279,28 +307,29 @@ def train_models(X_train, X_test, y_train, y_test, output_pth):
 
     joblib.dump(lrc, os.path.join(output_pth, 'logistic_model.pkl'))
 
-if __name__ == '__main__':
-    df = import_data(data_path)
 
-    perform_eda(df, eda_dir)
+if __name__ == '__main__':
+    df = import_data(DATA_PATH)
+
+    perform_eda(df, EDA_PTH)
     df_encoded = encoder_helper(df, cat_columns)
     X_train, X_test, y_train, y_test = perform_feature_engineering(df_encoded)
 
-    train_models(X_train, X_test, y_train, y_test, models_dir)
-    rfc = joblib.load(os.path.join(models_dir, 'rfc_model.pkl'))
-    lrc = joblib.load(os.path.join(models_dir, 'logistic_model.pkl'))
+    train_models(X_train, X_test, y_train, y_test, MODELS_DIR)
+    rfc = joblib.load(os.path.join(MODELS_DIR, 'rfc_model.pkl'))
+    lrc = joblib.load(os.path.join(MODELS_DIR, 'logistic_model.pkl'))
 
     y_train_preds_rf = rfc.predict(X_train)
     y_test_preds_rf = rfc.predict(X_test)
     y_train_preds_lr = lrc.predict(X_train)
     y_test_preds_lr = lrc.predict(X_test)
 
-    performance_curves(lrc, rfc, X_test, y_test, results_dir)
+    performance_curves(lrc, rfc, X_test, y_test, RESULTS_DIR)
     classification_report_image(y_train,
                                 y_test,
                                 y_train_preds_lr,
                                 y_train_preds_rf,
                                 y_test_preds_lr,
                                 y_test_preds_rf,
-                                results_dir)
-    feature_importance_plot(rfc, X_train, results_dir)
+                                RESULTS_DIR)
+    feature_importance_plot(rfc, X_train, RESULTS_DIR)
